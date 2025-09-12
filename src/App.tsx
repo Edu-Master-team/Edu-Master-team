@@ -9,6 +9,7 @@ import Orders from "./pages/Orders";
 import Question from "./pages/Question";
 import Settings from "./pages/Settings";
 import StudentExam from "./pages/StudentExam";
+import UserPage from "./pages/User";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="exam" element={<Exam />} />
           <Route path="student-exam" element={<StudentExam />} />
           <Route path="admin" element={<Admin />} />
+          <Route path="user" element={<UserPage />} />
           <Route path="customers" element={<Customers />} />
           <Route path="settings" element={<Settings />} />
         </Route>

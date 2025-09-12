@@ -1,5 +1,6 @@
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
+import { FaUser } from "react-icons/fa";
 import {
   MdAdminPanelSettings,
   MdAssignment,
@@ -27,6 +28,7 @@ const navigation = [
   { name: "Exam", href: "/exam", icon: MdAssignment },
   { name: "Student Exam", href: "/student-exam", icon: MdSchool },
   { name: "Admin", href: "/admin", icon: MdAdminPanelSettings },
+  { name: "User", href: "/user", icon: FaUser },
   { name: "Customers", href: "/customers", icon: MdPeople },
   { name: "Settings", href: "/settings", icon: MdSettings },
 ];

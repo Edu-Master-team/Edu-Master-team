@@ -1,12 +1,10 @@
 // src/pages/AdminsPage.tsx
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { MdAdminPanelSettings } from "react-icons/md";
-import { useGetAllAdminsQuery } from "../app/features/APISlice";
-import AddAdminDialog from "../components/AddAdminModal";
+import { useGetAllUsersQuery } from "../app/features/APISlice";
 
-export default function AdminsPage() {
-  const [open, setOpen] = useState(false);
-  const { data = [], isFetching, isError, refetch } = useGetAllAdminsQuery();
+export default function UserPage() {
+  const { data = [], isFetching, isError, refetch } = useGetAllUsersQuery();
 
   // شيل أي حقول حساسة لو راجعة بالغلط (زي password)
   const admins = useMemo(
@@ -48,7 +46,7 @@ export default function AdminsPage() {
             <div className="flex items-center">
               <MdAdminPanelSettings className="h-6 w-6 text-gray-400 mr-3" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Administrator Accounts
+                Users Accounts
               </h2>
             </div>
             <div className="flex items-center gap-2">
@@ -56,11 +54,6 @@ export default function AdminsPage() {
                 onClick={refetch}
                 className="inline-flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">
                 Refresh
-              </button>
-              <button
-                onClick={() => setOpen(true)}
-                className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-                Add Admin
               </button>
             </div>
           </div>
@@ -154,8 +147,6 @@ export default function AdminsPage() {
           </table>
         </div>
       </div>
-
-      <AddAdminDialog open={open} onClose={() => setOpen(false)} />
     </div>
   );
 }
