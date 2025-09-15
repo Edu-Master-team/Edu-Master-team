@@ -1,80 +1,53 @@
+import { Dialog, DialogPanel } from "@headlessui/react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { MdPlayLesson } from "react-icons/md";
+import {
+  useAddLessonMutation,
+  useGetAllLessonQuery,
+} from "../app/features/APISlice";
+import type { Lesson } from "../app/features/types";
 
-const lessons = [
-  {
-    id: "LESSON-001",
-    title: "Introduction to JavaScript",
-    instructor: "Dr. Sarah Ahmed",
-    duration: "45 minutes",
-    level: "Beginner",
-    students: 120,
-    status: "Published",
-  },
-  {
-    id: "LESSON-002",
-    title: "React Components and Props",
-    instructor: "Prof. Mohammed Hassan",
-    duration: "60 minutes",
-    level: "Intermediate",
-    students: 85,
-    status: "Published",
-  },
-  {
-    id: "LESSON-003",
-    title: "Advanced CSS Grid Layout",
-    instructor: "Dr. Fatima Khalil",
-    duration: "50 minutes",
-    level: "Advanced",
-    students: 45,
-    status: "Draft",
-  },
-  {
-    id: "LESSON-004",
-    title: "Node.js Backend Development",
-    instructor: "Prof. Ahmed Omar",
-    duration: "90 minutes",
-    level: "Intermediate",
-    students: 67,
-    status: "Published",
-  },
-  {
-    id: "LESSON-005",
-    title: "Database Design Principles",
-    instructor: "Dr. Aisha Ibrahim",
-    duration: "75 minutes",
-    level: "Advanced",
-    students: 38,
-    status: "Published",
-  },
-];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Published":
-      return "bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/20";
-    case "Draft":
-      return "bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/20 dark:text-yellow-400 dark:ring-yellow-400/20";
-    case "Archived":
-      return "bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/20 dark:text-gray-400 dark:ring-gray-400/20";
-    default:
-      return "bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/20 dark:text-gray-400 dark:ring-gray-400/20";
-  }
+type LessonFormValues = {
+  title: string;
+  description: string;
+  video: string;
+  classLevel: string;
+  scheduledDate: string;
+  price: number;
 };
 
-const getLevelColor = (level: string) => {
-  switch (level) {
-    case "Beginner":
-      return "bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/20";
-    case "Intermediate":
-      return "bg-yellow-50 text-yellow-700 ring-yellow-600/20 dark:bg-yellow-900/20 dark:text-yellow-400 dark:ring-yellow-400/20";
-    case "Advanced":
-      return "bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/20 dark:text-red-400 dark:ring-red-400/20";
-    default:
-      return "bg-gray-50 text-gray-700 ring-gray-600/20 dark:bg-gray-900/20 dark:text-gray-400 dark:ring-gray-400/20";
-  }
-};
+export default function LessonPage() {
+  const { data: lessons = [], isFetching, isError } = useGetAllLessonQuery();
+  const [isOpen, setIsOpen] = useState(false);
+  const [addLesson, { isLoading }] = useAddLessonMutation();
 
-export default function Lesson() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<LessonFormValues>();
+
+  const onSubmit = async (data: LessonFormValues) => {
+    try {
+      await addLesson(data).unwrap();
+      reset();
+      setIsOpen(false);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  if (isFetching) return <p>Loading…</p>;
+  if (isError) return <p>Something went wrong</p>;
+
+  const safeLessons: Lesson[] = Array.isArray(lessons)
+    ? lessons
+    : Array.isArray((lessons as any)?.data)
+    ? (lessons as any).data
+    : [];
+
   return (
     <div>
       <div className="mb-8">
@@ -95,7 +68,9 @@ export default function Lesson() {
                 Lesson Catalog
               </h2>
             </div>
-            <button className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
+            <button
+              onClick={() => setIsOpen(true)}
+              className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
               Add Lesson
             </button>
           </div>
@@ -109,60 +84,46 @@ export default function Lesson() {
                   Lesson ID
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  video
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Title
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Instructor
+                  Description
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Duration
+                  Class Level
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Level
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Students
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Status
-                </th>
+                <th className="px-6 py-3"></th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {lessons.map((lesson) => (
+              {safeLessons.map((lesson) => (
                 <tr
-                  key={lesson.id}
+                  key={lesson._id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {lesson.id}
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                    {lesson._id}
                   </td>
+
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                    <video src={lesson.video} width={200} controls />
+                  </td>
+
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
                     {lesson.title}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {lesson.instructor}
+                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                    {lesson.description}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {lesson.duration}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${getLevelColor(
-                        lesson.level
-                      )}`}>
-                      {lesson.level}
+                  <td className="px-6 py-4">
+                    <span className=" text-gray-900 dark:text-white">
+                      {lesson.classLevel}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                    {lesson.students}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${getStatusColor(
-                        lesson.status
-                      )}`}>
-                      {lesson.status}
-                    </span>
+                  <td className="px-6 py-4 text-right">
+                    {/* أزرار أكشن هنا لو عايز */}
                   </td>
                 </tr>
               ))}
@@ -170,6 +131,153 @@ export default function Lesson() {
           </table>
         </div>
       </div>
+
+      {/* Dialog */}
+      <Dialog
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        as="div"
+        className="relative z-10">
+        <div className="fixed mt-6 inset-0 z-10 w-screen overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+            <DialogPanel className="w-full max-w-md rounded-xl bg-white/5 p-6 backdrop-blur-2xl ring-1 ring-white/10">
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-4 mt-3">
+                {/* Title */}
+                <div>
+                  <label className="block mb-1 text-gray-900 dark:text-white">
+                    Title
+                  </label>
+                  <input
+                    {...register("title", { required: "Title is required" })}
+                    className="border rounded p-2 w-full bg-white/90 text-gray-900"
+                  />
+                  {errors.title && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.title.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block mb-1 text-gray-900 dark:text-white">
+                    Description
+                  </label>
+                  <textarea
+                    {...register("description", {
+                      required: "Description is required",
+                    })}
+                    className="border rounded p-2 w-full bg-white/90 text-gray-900 min-h-[100px]"
+                  />
+                  {errors.description && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.description.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Video */}
+                <div>
+                  <label className="block mb-1 text-gray-900 dark:text-white">
+                    Video URL
+                  </label>
+                  <input
+                    {...register("video", {
+                      required: "Video URL is required",
+                    })}
+                    className="border rounded p-2 w-full bg-white/90 text-gray-900"
+                  />
+                  {errors.video && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.video.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Class Level */}
+                <div>
+                  <label className="block mb-1 text-gray-900 dark:text-white">
+                    Class Level
+                  </label>
+                  <input
+                    {...register("classLevel", {
+                      required: "Class Level is required",
+                    })}
+                    className="border rounded p-2 w-full bg-white/90 text-gray-900"
+                  />
+                  {errors.classLevel && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.classLevel.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Date */}
+                <div>
+                  <label className="block mb-1 text-gray-900 dark:text-white">
+                    Scheduled Date
+                  </label>
+                  <input
+                    type="date"
+                    {...register("scheduledDate", {
+                      required: "Date is required",
+                    })}
+                    className="border rounded p-2 w-full bg-white/90 text-gray-900"
+                  />
+                  {errors.scheduledDate && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.scheduledDate.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Price */}
+                <div>
+                  <label className="block mb-1 text-gray-900 dark:text-white">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    {...register("price", {
+                      required: "Price is required",
+                      valueAsNumber: true,
+                    })}
+                    className="border rounded p-2 w-full bg-white/90 text-gray-900"
+                  />
+                  {errors.price && (
+                    <p className="text-red-400 text-sm mt-1">
+                      {errors.price.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    disabled={isLoading}
+                    type="submit"
+                    className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                    Submit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => reset()}
+                    className="inline-flex items-center rounded-md bg-gray-700 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600">
+                    Reset
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="ml-auto inline-flex items-center rounded-md bg-zinc-700 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-600">
+                    Close
+                  </button>
+                </div>
+              </form>
+            </DialogPanel>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }

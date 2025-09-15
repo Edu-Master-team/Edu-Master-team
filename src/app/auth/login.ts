@@ -1,4 +1,4 @@
-// LoginOnce.tsx
+// src/features/auth/LoginOnce.tsx
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useLoginMutation } from "../features/APISlice";
@@ -9,17 +9,22 @@ export default function LoginOnce() {
   const [login] = useLoginMutation();
 
   useEffect(() => {
-    (async () => {
+    const doLogin = async () => {
       try {
         const res = await login({
-          email: "S_admin@gmail.com",
-          password: "Sadmin123@",
+          email: "basmalayassser22@gmail.com",
+          password: "123456@Aa",
         }).unwrap();
+
+        // نخزن التوكن في redux + localStorage (عن طريق الـ reducer)
         dispatch(setToken(res.token));
+        console.log("Logged in, token:", res.token);
       } catch (e) {
         console.error("Login failed:", e);
       }
-    })();
+    };
+
+    doLogin();
   }, [login, dispatch]);
 
   return null; // مفيش UI

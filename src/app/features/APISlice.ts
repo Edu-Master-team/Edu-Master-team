@@ -19,12 +19,25 @@ export interface CreateAdminBody {
   password: string;
   cpassword: string;
 }
-export interface CreateAdminBody {
-  fullName: string;
-  email: string;
-  phoneNumber: string;
-  password: string;
-  cpassword: string;
+
+export interface Lesson {
+  _id: string;
+  title: string;
+  description: string;
+  video: string;
+  classLevel: string;
+  scheduledDate: string;
+  price: number;
+}
+
+export interface IAddLesson {
+  _id?: string;
+  title: string;
+  description: string;
+  video: string;
+  classLevel: string;
+  scheduledDate: string;
+  price: number;
 }
 
 export interface Admin {
@@ -33,27 +46,38 @@ export interface Admin {
   phoneNumber: string;
   email: string;
   classLevel?: string;
-  role: string; // "admin" | "superAdmin" | ...
+  role: string;
   isVerified: boolean;
-  // password?: string;   // جاي من السيرفر كهاش أحياناً — ما نستخدموش
 }
 
 type ApiEnvelope<T> = { message: string; success: boolean; data: T };
+
+const normalizeArray = <T>(res: any): T[] => {
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res?.data)) return res.data;
+  if (Array.isArray(res?.items)) return res.items;
+  if (res == null) return [];
+  return [res];
+};
 
 export const APISlice = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
     baseUrl: "https://edu-master-delta.vercel.app",
-    // هنمرّر التوكن من الـ auth slice تحت
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any)?.auth?.token;
-      if (token) headers.set("token", token);
+      const token =
+        (getState() as any)?.auth?.token || localStorage.getItem("token");
+      if (token) {
+        headers.set("token", token);
+
+        // لو في المستقبل غيّرته لـ Bearer:
+        headers.set("Authorization", `Bearer ${token}`);
+      }
       return headers;
     },
   }),
-  tagTypes: ["Admins", "Users"],
+  tagTypes: ["Admins", "Users", "Lessons"],
   endpoints: (builder) => ({
-    // POST /auth/login  -> بيرجع token
     login: builder.mutation<LoginResp, LoginBody>({
       query: (body) => ({
         url: "/auth/login",
@@ -67,16 +91,16 @@ export const APISlice = createApi({
         url: "/admin/create-admin",
         method: "POST",
         body,
-        responseHandler: (response) => response.text(),
-        validateStatus: (response, _body) =>
-          response.status >= 200 && response.status < 300,
+        responseHandler: (r) => r.text(),
+        validateStatus: (res) => res.status >= 200 && res.status < 300,
       }),
       invalidatesTags: ["Admins"],
     }),
 
     getAllAdmins: builder.query<Admin[], void>({
       query: () => ({ url: "/admin/all-admin", method: "GET" }),
-      transformResponse: (resp: ApiEnvelope<Admin[]>) => resp?.data ?? [],
+      transformResponse: (resp: ApiEnvelope<Admin[]> | Admin[]) =>
+        normalizeArray<Admin>(resp),
       providesTags: (result) =>
         result
           ? [
@@ -86,25 +110,39 @@ export const APISlice = createApi({
           : [{ type: "Admins" as const, id: "LIST" }],
     }),
 
-    // GET /admin/all-user
-    getAllUsedrs: builder.query<any[], void>({
-      query: () => ({
-        url: "/admin/all-user",
-        method: "GET",
-      }),
-      providesTags: ["Users"],
-    }),
-
     getAllUsers: builder.query<Admin[], void>({
       query: () => ({ url: "/admin/all-user", method: "GET" }),
-      transformResponse: (resp: ApiEnvelope<Admin[]>) => resp?.data ?? [],
+      transformResponse: (resp: ApiEnvelope<Admin[]> | Admin[]) =>
+        normalizeArray<Admin>(resp),
       providesTags: (result) =>
         result
           ? [
-              ...result.map((a) => ({ type: "Users" as const, id: a._id })),
+              ...result.map((u) => ({ type: "Users" as const, id: u._id })),
               { type: "Users" as const, id: "LIST" },
             ]
           : [{ type: "Users" as const, id: "LIST" }],
+    }),
+
+    addLesson: builder.mutation<Lesson, IAddLesson>({
+      query: (body) => ({
+        url: "/lesson",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Lessons"],
+    }),
+
+    getAllLesson: builder.query<Lesson[], void>({
+      query: () => ({ url: "/lesson", method: "GET" }),
+      transformResponse: (resp: ApiEnvelope<Lesson[]> | Lesson[]) =>
+        normalizeArray<Lesson>(resp),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((l) => ({ type: "Lessons" as const, id: l._id })),
+              { type: "Lessons" as const, id: "LIST" },
+            ]
+          : [{ type: "Lessons" as const, id: "LIST" }],
     }),
   }),
 });
@@ -114,4 +152,6 @@ export const {
   useCreateAdminMutation,
   useGetAllAdminsQuery,
   useGetAllUsersQuery,
+  useAddLessonMutation,
+  useGetAllLessonQuery,
 } = APISlice;
