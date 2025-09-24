@@ -63,7 +63,7 @@ const normalizeArray = <T>(res: any): T[] => {
 export const APISlice = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://edu-master-delta.vercel.app",
+    baseUrl: "https://edu-master-psi.vercel.app",
     prepareHeaders: (headers, { getState }) => {
       const token =
         (getState() as any)?.auth?.token || localStorage.getItem("token");
@@ -91,14 +91,18 @@ export const APISlice = createApi({
         url: "/admin/create-admin",
         method: "POST",
         body,
-        responseHandler: (r) => r.text(),
         validateStatus: (res) => res.status >= 200 && res.status < 300,
       }),
       invalidatesTags: ["Admins"],
     }),
 
     getAllAdmins: builder.query<Admin[], void>({
-      query: () => ({ url: "/admin/all-admin", method: "GET" }),
+      query: () => {
+        return {
+          url: "/admin/all-admin",
+          method: "GET",
+        };
+      },
       transformResponse: (resp: ApiEnvelope<Admin[]> | Admin[]) =>
         normalizeArray<Admin>(resp),
       providesTags: (result) =>
@@ -144,6 +148,38 @@ export const APISlice = createApi({
             ]
           : [{ type: "Lessons" as const, id: "LIST" }],
     }),
+
+    // UPDATE lesson
+    updateLesson: builder.mutation<Lesson, { id: string } & IAddLesson>({
+      query: ({ id, ...body }) => ({
+        url: `/lesson/${id}`,
+        method: "PUT",
+        body,
+      }),
+      // حدّث كاش الدرس المعدّل + قايمة الدروس
+      invalidatesTags: (result, error, arg) =>
+        result
+          ? [
+              { type: "Lessons", id: arg.id },
+              { type: "Lessons", id: "LIST" },
+            ]
+          : [{ type: "Lessons", id: "LIST" }],
+    }),
+
+    // DELETE lesson
+    deleteLesson: builder.mutation<
+      { message?: string; success?: boolean } | void,
+      string
+    >({
+      query: (id) => ({
+        url: `/lesson/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: "Lessons", id },
+        { type: "Lessons", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -154,4 +190,7 @@ export const {
   useGetAllUsersQuery,
   useAddLessonMutation,
   useGetAllLessonQuery,
+  // الجديد
+  useUpdateLessonMutation,
+  useDeleteLessonMutation,
 } = APISlice;

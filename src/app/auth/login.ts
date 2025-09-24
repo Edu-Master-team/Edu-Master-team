@@ -14,6 +14,9 @@ export default function LoginOnce() {
         const res = await login({
           email: "basmalayassser22@gmail.com",
           password: "123456@Aa",
+
+          // email: "S_admin@gmail.com",
+          // password: "Sadmin123@",
         }).unwrap();
 
         // نخزن التوكن في redux + localStorage (عن طريق الـ reducer)

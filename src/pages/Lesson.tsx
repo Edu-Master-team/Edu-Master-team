@@ -1,52 +1,139 @@
 import { Dialog, DialogPanel } from "@headlessui/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { MdPlayLesson } from "react-icons/md";
+import { FaEdit } from "react-icons/fa";
+import { MdDelete, MdPlayLesson } from "react-icons/md";
+import ReactPlayer from "react-player";
 import {
   useAddLessonMutation,
+  useDeleteLessonMutation,
   useGetAllLessonQuery,
+  useUpdateLessonMutation,
+  type Lesson,
 } from "../app/features/APISlice";
-import type { Lesson } from "../app/features/types";
-
 type LessonFormValues = {
   title: string;
   description: string;
   video: string;
   classLevel: string;
-  scheduledDate: string;
+  scheduledDate: string; // yyyy-mm-dd
   price: number;
 };
 
 export default function LessonPage() {
-  const { data: lessons = [], isFetching, isError } = useGetAllLessonQuery();
+  const {
+    data: lessons = [],
+    isFetching,
+    isError,
+    refetch,
+  } = useGetAllLessonQuery(undefined, {
+    // لتقليل الاهتزازات وإعادة الجلب المفاجئة
+    refetchOnFocus: false,
+    refetchOnReconnect: false,
+  });
+
   const [isOpen, setIsOpen] = useState(false);
-  const [addLesson, { isLoading }] = useAddLessonMutation();
+  const [mode, setMode] = useState<"create" | "edit">("create");
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+
+  const [addLesson, { isLoading: isAdding }] = useAddLessonMutation();
+  const [updateLesson, { isLoading: isUpdating }] = useUpdateLessonMutation();
+  const [deleteLesson, { isLoading: isDeleting }] = useDeleteLessonMutation();
+
+  const emptyDefaults: LessonFormValues = useMemo(
+    () => ({
+      title: "",
+      description: "",
+      video: "",
+      classLevel: "",
+      scheduledDate: new Date().toISOString().slice(0, 10),
+      price: 0,
+    }),
+    []
+  );
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<LessonFormValues>();
+  } = useForm<LessonFormValues>({
+    defaultValues: emptyDefaults,
+  });
+
+  // تهيئة قيم الفورم عند فتح الديالوج
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (mode === "edit" && selectedLesson) {
+      reset({
+        title: selectedLesson.title ?? "",
+        description: selectedLesson.description ?? "",
+        video: selectedLesson.video ?? "",
+        classLevel: selectedLesson.classLevel ?? "",
+        scheduledDate: (selectedLesson.scheduledDate || "").slice(0, 10),
+        price: Number(selectedLesson.price ?? 0),
+      });
+    } else {
+      reset(emptyDefaults);
+    }
+  }, [isOpen, mode, selectedLesson, reset, emptyDefaults]);
 
   const onSubmit = async (data: LessonFormValues) => {
     try {
-      await addLesson(data).unwrap();
-      reset();
+      if (mode === "edit" && selectedLesson?._id) {
+        await updateLesson({ id: selectedLesson._id, ...data }).unwrap();
+      } else {
+        await addLesson(data).unwrap();
+      }
+      reset(emptyDefaults);
       setIsOpen(false);
+      setSelectedLesson(null);
+      setMode("create");
+      // عادةً الـ invalidatesTags هيكفي، إنما refetch كتأمين إضافي
+      refetch();
     } catch (e) {
       console.error(e);
     }
   };
 
-  if (isFetching) return <p>Loading…</p>;
-  if (isError) return <p>Something went wrong</p>;
+  const handleOpenCreate = () => {
+    setMode("create");
+    setSelectedLesson(null);
+    setIsOpen(true);
+  };
+
+  const handleOpenEdit = (lesson: Lesson) => {
+    setMode("edit");
+    setSelectedLesson(lesson);
+    setIsOpen(true);
+  };
+
+  const onDelete = async (lesson: Lesson) => {
+    const ok = window.confirm(`Delete lesson "${lesson.title}"?`);
+    if (!ok) return;
+    try {
+      await deleteLesson(lesson._id).unwrap();
+      if (selectedLesson?._id === lesson._id) {
+        setSelectedLesson(null);
+        setMode("create");
+        setIsOpen(false);
+      }
+      refetch();
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const safeLessons: Lesson[] = Array.isArray(lessons)
     ? lessons
     : Array.isArray((lessons as any)?.data)
     ? (lessons as any).data
     : [];
+
+  if (isError) return <p>Something went wrong</p>;
+
+  const isBusy = isAdding || isUpdating || isDeleting;
 
   return (
     <div>
@@ -69,7 +156,7 @@ export default function LessonPage() {
               </h2>
             </div>
             <button
-              onClick={() => setIsOpen(true)}
+              onClick={handleOpenCreate}
               className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
               Add Lesson
             </button>
@@ -78,55 +165,113 @@ export default function LessonPage() {
 
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <caption className="text-3xl text-center text-gray-900 dark:text-white mb-4">
+              Lessons
+            </caption>
+
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Lesson ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  video
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Video
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Title
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Class Level
                 </th>
-                <th className="px-6 py-3"></th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Action
+                </th>
               </tr>
             </thead>
+
+            {/* tbody ثابت لتفادي Unmount وبالتالي تفادي AbortError */}
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {safeLessons.map((lesson) => (
-                <tr
-                  key={lesson._id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                    {lesson._id}
-                  </td>
-
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
-                    <video src={lesson.video} width={200} controls />
-                  </td>
-
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    {lesson.title}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                    {lesson.description}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className=" text-gray-900 dark:text-white">
-                      {lesson.classLevel}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {/* أزرار أكشن هنا لو عايز */}
+              {safeLessons.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8">
+                    <p className="text-center text-gray-600 dark:text-gray-300">
+                      No lessons found.
+                    </p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                safeLessons.map((lesson) => (
+                  <tr
+                    key={lesson._id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white break-all">
+                      {lesson._id}
+                    </td>
+
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="w-48 max-w-full aspect-video">
+                        <ReactPlayer src={lesson.video} controls />
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {lesson.title}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      {lesson.description}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                      {lesson.classLevel}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex gap-4">
+                        <button
+                          className="cursor-pointer text-amber-500 text-2xl"
+                          aria-label="Edit lesson"
+                          onClick={() => handleOpenEdit(lesson)}
+                          title="Edit">
+                          <FaEdit />
+                        </button>
+                        <button
+                          onClick={() => onDelete(lesson)}
+                          className="cursor-pointer text-red-700 text-2xl disabled:opacity-50"
+                          aria-label="Delete lesson"
+                          disabled={isDeleting}
+                          title={isDeleting ? "Deleting..." : "Delete"}>
+                          <MdDelete />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+
+              {/* مؤشر تحديث بسيط أثناء isFetching من غير ما نمسح الصفوف */}
+              {isFetching && safeLessons.length > 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-3">
+                    <span className="block text-center text-sm text-gray-500 dark:text-gray-400 animate-pulse">
+                      Updating…
+                    </span>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -138,19 +283,28 @@ export default function LessonPage() {
         onClose={() => setIsOpen(false)}
         as="div"
         className="relative z-10">
+        {/* Overlay */}
+        <div className="fixed inset-0 bg-black/40" aria-hidden="true" />
         <div className="fixed mt-6 inset-0 z-10 w-screen overflow-y-auto">
           <div className="flex min-h-full items-center justify-center p-4">
             <DialogPanel className="w-full max-w-md rounded-xl bg-white/5 p-6 backdrop-blur-2xl ring-1 ring-white/10">
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 className="space-y-4 mt-3">
+                <h3 className="text-lg font-semibold text-white">
+                  {mode === "edit" ? "Edit Lesson" : "Add Lesson"}
+                </h3>
+
                 {/* Title */}
                 <div>
                   <label className="block mb-1 text-gray-900 dark:text-white">
                     Title
                   </label>
                   <input
-                    {...register("title", { required: "Title is required" })}
+                    {...register("title", {
+                      required: "Title is required",
+                      minLength: { value: 2, message: "Too short" },
+                    })}
                     className="border rounded p-2 w-full bg-white/90 text-gray-900"
                   />
                   {errors.title && (
@@ -188,6 +342,7 @@ export default function LessonPage() {
                       required: "Video URL is required",
                     })}
                     className="border rounded p-2 w-full bg-white/90 text-gray-900"
+                    placeholder="YouTube/Vimeo URL or direct MP4"
                   />
                   {errors.video && (
                     <p className="text-red-400 text-sm mt-1">
@@ -255,20 +410,58 @@ export default function LessonPage() {
 
                 <div className="flex items-center gap-2 pt-2">
                   <button
-                    disabled={isLoading}
+                    disabled={isBusy}
                     type="submit"
-                    className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500">
-                    Submit
+                    className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-50">
+                    {mode === "edit"
+                      ? isUpdating
+                        ? "Saving..."
+                        : "Save changes"
+                      : isAdding
+                      ? "Adding..."
+                      : "Submit"}
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => reset()}
+                    onClick={() =>
+                      reset(
+                        mode === "edit" && selectedLesson
+                          ? {
+                              title: selectedLesson.title ?? "",
+                              description: selectedLesson.description ?? "",
+                              video: selectedLesson.video ?? "",
+                              classLevel: selectedLesson.classLevel ?? "",
+                              scheduledDate: (
+                                selectedLesson.scheduledDate || ""
+                              ).slice(0, 10),
+                              price: Number(selectedLesson.price ?? 0),
+                            }
+                          : emptyDefaults
+                      )
+                    }
                     className="inline-flex items-center rounded-md bg-gray-700 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600">
                     Reset
                   </button>
+
+                  {mode === "edit" && selectedLesson && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(selectedLesson)}
+                      className="inline-flex items-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+                      disabled={isDeleting}
+                      title={isDeleting ? "Deleting..." : "Delete lesson"}>
+                      {isDeleting ? "Deleting..." : "Delete"}
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    onClick={() => setIsOpen(false)}
+                    onClick={() => {
+                      setIsOpen(false);
+                      setSelectedLesson(null);
+                      setMode("create");
+                    }}
                     className="ml-auto inline-flex items-center rounded-md bg-zinc-700 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-600">
                     Close
                   </button>
