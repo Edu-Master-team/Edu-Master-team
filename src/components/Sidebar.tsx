@@ -6,12 +6,9 @@ import {
   MdAssignment,
   MdClose,
   MdHome,
-  MdPeople,
   MdPlayLesson,
   MdQuiz,
   MdSchool,
-  MdSettings,
-  MdShoppingBag,
 } from "react-icons/md";
 import { NavLink } from "react-router-dom";
 
@@ -22,15 +19,13 @@ interface SidebarProps {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: MdHome },
-  { name: "Orders", href: "/orders", icon: MdShoppingBag },
+
   { name: "Lesson", href: "/lesson", icon: MdPlayLesson },
   { name: "Question", href: "/question", icon: MdQuiz },
   { name: "Exam", href: "/exam", icon: MdAssignment },
   { name: "Student Exam", href: "/student-exam", icon: MdSchool },
   { name: "Admin", href: "/admin", icon: MdAdminPanelSettings },
   { name: "User", href: "/user", icon: FaUser },
-  { name: "Customers", href: "/customers", icon: MdPeople },
-  { name: "Settings", href: "/settings", icon: MdSettings },
 ];
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }: SidebarProps) {
