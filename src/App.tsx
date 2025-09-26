@@ -8,7 +8,7 @@ import Lesson from "./pages/Lesson";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import Question from "./pages/Question";
-import StudentExam from "./pages/StudentExam";
+// import StudentExam removed
 import UserPage from "./pages/User";
 
 function App() {

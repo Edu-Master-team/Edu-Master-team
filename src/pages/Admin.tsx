@@ -11,7 +11,7 @@ export default function AdminsPage() {
   // شيل أي حقول حساسة لو راجعة بالغلط (زي password)
   const admins = useMemo(
     () =>
-      Array.isArray(data) ? data.map(({ password, ...rest }) => rest) : [],
+      Array.isArray(data) ? data.map(rest => rest) : [],
     [data]
   );
 

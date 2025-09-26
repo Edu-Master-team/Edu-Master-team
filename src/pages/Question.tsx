@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react"; // Added useEffect
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 import { FiEdit } from "react-icons/fi";
 import { MdQuiz } from "react-icons/md";
 import { RiDeleteBin2Fill } from "react-icons/ri";
-import { useState, useEffect } from "react"; // Added useEffect
-import { useForm } from "react-hook-form";
 import {
   useAddQuestionMutation,
   useDeleteQuestionMutation,
@@ -10,21 +11,9 @@ import {
   useGetAllQuestionQuery,
   useUpdateQuestionMutation,
 } from "../app/features/APISlice";
-import toast from "react-hot-toast";
 
-interface QuestionObject {
-  text: string;
-  type: string;
-  option1?: string;
-  option2?: string;
-  option3?: string;
-  correctAnswer: string;
-  exam: string;
-  points: number;
-  _id?: string; // Added for update compatibility
-}
-
-function createQuestion(data) {
+// removed unused QuestionObject
+function createQuestion(data: any) {
   console.log(data);
   const baseQuestion = {
     type: data.type,
@@ -46,7 +35,7 @@ function createQuestion(data) {
   }
 }
 
-function Dialog({ isOpen, onClose, children, title }) {
+function Dialog({ isOpen, onClose, children, title }: any) {
   if (!isOpen) return null;
 
   return (
@@ -58,8 +47,7 @@ function Dialog({ isOpen, onClose, children, title }) {
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-          >
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
             ✕
           </button>
         </div>
@@ -69,16 +57,11 @@ function Dialog({ isOpen, onClose, children, title }) {
   );
 }
 
-function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
+function QuestionForm({ onClose, defaultValues, isUpdate = false }: any) {
   const { data: allExams = [] } = useGetAllExamQuery();
-  const [
-    addQuestion,
-    { isLoading: addLoading, isError: addError, error: addErrorData },
-  ] = useAddQuestionMutation();
-  const [
-    updateQuestion,
-    { isLoading: updateLoading, isError: updateError, error: updateErrorData },
-  ] = useUpdateQuestionMutation();
+  const [addQuestion, { isLoading: addLoading }] = useAddQuestionMutation();
+  const [updateQuestion, { isLoading: updateLoading }] =
+    useUpdateQuestionMutation();
 
   const {
     register,
@@ -102,23 +85,22 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
 
   const questionType = watch("type", defaultValues?.type || "true-false");
   const isLoading = isUpdate ? updateLoading : addLoading;
-  const errorData = isUpdate ? updateErrorData : addErrorData;
 
   // Enhanced validation for correctAnswer: required and non-empty
   const correctAnswerValidation = {
     required: "Correct answer is required",
-    validate: (value) =>
+    validate: (value: string) =>
       value.trim() !== "" || "Correct answer cannot be empty",
   };
 
-  const handleFormSubmit = async (data) => {
+  const handleFormSubmit = async (data: any) => {
     const questionData = createQuestion(data);
     try {
       console.log("Submitting:", questionData);
       if (isUpdate) {
         await updateQuestion({
           id: defaultValues._id,
-          ...questionData,
+          body: questionData,
         }).unwrap(); // Corrected syntax
         toast.success(`Question updated successfully`);
       } else {
@@ -129,7 +111,9 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
       onClose();
     } catch (error) {
       console.error("Failed to process question:", error);
-      toast.error(error?.data?.message || "Failed to process question");
+      toast.error(
+        (error as any)?.data?.message || "Failed to process question"
+      );
     }
   };
 
@@ -174,7 +158,7 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
           placeholder="Is the earth flat?"
         />
         {errors.text && (
-          <p className="text-red-500 text-sm">{errors.text.message}</p>
+          <p className="text-red-500 text-sm">{String(errors.text.message)}</p>
         )}
       </div>
 
@@ -202,13 +186,19 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
             />
           </div>
           {errors.option1 && (
-            <p className="text-red-500 text-sm">{errors.option1.message}</p>
+            <p className="text-red-500 text-sm">
+              {String(errors.option1.message)}
+            </p>
           )}
           {errors.option2 && (
-            <p className="text-red-500 text-sm">{errors.option2.message}</p>
+            <p className="text-red-500 text-sm">
+              {String(errors.option2.message)}
+            </p>
           )}
           {errors.option3 && (
-            <p className="text-red-500 text-sm">{errors.option3.message}</p>
+            <p className="text-red-500 text-sm">
+              {String(errors.option3.message)}
+            </p>
           )}
 
           <label className="block font-semibold mb-1 mt-2 text-white">
@@ -222,7 +212,7 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
           />
           {errors.correctAnswer && (
             <p className="text-red-500 text-sm">
-              {errors.correctAnswer.message}
+              {String(errors.correctAnswer.message)}
             </p>
           )}
         </div>
@@ -235,15 +225,14 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
           </label>
           <select
             {...register("correctAnswer", correctAnswerValidation)}
-            className="bg-white/90 text-gray-900 w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+            className="bg-white/90 text-gray-900 w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             <option value="">Select...</option>
             <option value="True">True</option>
             <option value="False">False</option>
           </select>
           {errors.correctAnswer && (
             <p className="text-red-500 text-sm">
-              {errors.correctAnswer.message}
+              {String(errors.correctAnswer.message)}
             </p>
           )}
         </div>
@@ -262,7 +251,7 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
           />
           {errors.correctAnswer && (
             <p className="text-red-500 text-sm">
-              {errors.correctAnswer.message}
+              {String(errors.correctAnswer.message)}
             </p>
           )}
         </div>
@@ -272,8 +261,7 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
         <label className="block font-semibold mb-1 text-white">Exam</label>
         <select
           {...register("exam", { required: "You must choose an exam" })}
-          className="bg-white/90 text-gray-900 w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
+          className="bg-white/90 text-gray-900 w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
           <option value="">Select Exam...</option>
           {allExams?.map((exam) => (
             <option key={exam._id} value={exam._id}>
@@ -282,7 +270,7 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
           ))}
         </select>
         {errors.exam && (
-          <p className="text-red-500 text-sm">{errors.exam.message}</p>
+          <p className="text-red-500 text-sm">{String(errors.exam.message)}</p>
         )}
       </div>
 
@@ -298,15 +286,16 @@ function QuestionForm({ onClose, defaultValues, isUpdate = false }) {
           placeholder="3 points"
         />
         {errors.points && (
-          <p className="text-red-500 text-sm">{errors.points.message}</p>
+          <p className="text-red-500 text-sm">
+            {String(errors.points.message)}
+          </p>
         )}
       </div>
 
       <button
         type="submit"
         className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
-        disabled={isLoading}
-      >
+        disabled={isLoading}>
         {isLoading
           ? "Processing..."
           : isUpdate
@@ -324,15 +313,13 @@ export default function Question() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const { data: questions = [] } = useGetAllQuestionQuery();
   const [deleteQuestion] = useDeleteQuestionMutation();
-  const [addQuestion] = useAddQuestionMutation();
-  const [updateQuestion] = useUpdateQuestionMutation();
 
-  const handleOpenDialog = (type) => {
+  const handleOpenDialog = (type: any) => {
     setDialogType(type);
     setDialogOpen(true);
   };
 
-  const handleOpenUpdateDialog = (question) => {
+  const handleOpenUpdateDialog = (question: any) => {
     setSelectedQuestion(question);
     setUpdateDialogOpen(true);
   };
@@ -365,8 +352,7 @@ export default function Question() {
             </div>
             <button
               onClick={() => handleOpenDialog("multiple")}
-              className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
+              className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
               Add Question
             </button>
           </div>
@@ -400,8 +386,7 @@ export default function Question() {
               {questions.map((question) => (
                 <tr
                   key={question._id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {question.text}
                   </td>
@@ -445,16 +430,14 @@ export default function Question() {
             : dialogType === "true-false"
             ? "True/False"
             : "Short Answer"
-        } Question`}
-      >
-        <QuestionForm onClose={handleCloseDialog} />
+        } Question`}>
+        <QuestionForm onClose={handleCloseDialog} defaultValues={null} />
       </Dialog>
 
       <Dialog
         isOpen={updateDialogOpen}
         onClose={handleCloseDialog}
-        title="Update Question"
-      >
+        title="Update Question">
         <QuestionForm
           onClose={handleCloseDialog}
           defaultValues={selectedQuestion}

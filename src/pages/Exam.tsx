@@ -12,6 +12,12 @@ import { MdAssignment } from "react-icons/md";
 import { RiDeleteBin2Fill } from "react-icons/ri";
 import { FiEdit } from "react-icons/fi";
 
+const getErrorMessage = (e: unknown) => {
+  const err: any = e as any;
+  return err?.data?.message || err?.data?.error || err?.message || "Unknown error";
+};
+
+
 interface ExamFormValues {
   title: string;
   description: string;
@@ -34,7 +40,7 @@ interface Exam {
 }
 
 export default function Exam() {
-  const { data: exams = [], isFetching, isError } = useGetAllExamQuery<Exam[]>();
+  const { data: exams = [], isFetching, isError } = useGetAllExamQuery();
   const [addExam, { isLoading: isAdding, isError: isErrorAddExam, error: addExamError }] = useAddExamMutation();
   const [deleteExam] = useDeleteExamMutation();
   const [updateExam, { isLoading: isUpdating, isError: isErrorUpdateExam, error: updateExamError }] = useUpdateExamMutation();
@@ -84,7 +90,7 @@ export default function Exam() {
       if (editingExam) {
         await updateExam({ id: editingExam._id, body: data }).unwrap();
       } else {
-        await addExam(data).unwrap();
+        await addExam(data ).unwrap();
       }
       reset();
       setIsOpen(false);
@@ -158,7 +164,7 @@ export default function Exam() {
             </thead>
             {exams.length > 0 ? (
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {exams.map((exam) => (
+                {exams.map((exam: Exam) => (
                   <tr
                     key={exam._id}
                     className="hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -420,12 +426,12 @@ export default function Exam() {
 
               {isErrorAddExam && !editingExam && (
                 <p className="text-red-500">
-                  {addExamError?.data?.message || "An error occurred while adding the exam."}
+                  {getErrorMessage(addExamError as any) || "An error occurred while adding the exam."}
                 </p>
               )}
               {isErrorUpdateExam && editingExam && (
                 <p className="text-red-500">
-                  {updateExamError?.data?.message || "An error occurred while updating the exam."}
+                  {getErrorMessage(updateExamError as any) || "An error occurred while updating the exam."}
                 </p>
               )}
             </form>

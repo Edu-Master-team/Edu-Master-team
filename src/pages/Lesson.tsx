@@ -86,7 +86,7 @@ export default function LessonPage() {
       if (mode === "edit" && selectedLesson?._id) {
         // مهم: في التحديث بنشيل scheduledDate عشان ما يتبعتش ولا يتعدل
         const { scheduledDate, ...updateData } = data;
-        await updateLesson({ id: selectedLesson._id, ...updateData }).unwrap();
+        await updateLesson({ id: selectedLesson._id, ...updateData , scheduledDate: selectedLesson.scheduledDate }).unwrap();
       } else {
         // في الإضافة بنبعت scheduledDate عادي
         await addLesson(data).unwrap();

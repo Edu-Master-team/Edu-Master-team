@@ -1,3 +1,7 @@
+
+export type NewExam = Omit<Exam, "_id">;
+export type UpdateExamBody = Partial<Omit<Exam, "_id">>;
+
 // src/features/api/api.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import toast from "react-hot-toast";
@@ -53,6 +57,7 @@ export interface Admin {
 //---------------------------------------------------------
 
 export interface Exam {
+
   _id: string;
   title: string;
   description: string;
@@ -67,7 +72,7 @@ export interface Question {
   _id: string;
   text: string;
   type: string;
-  options: string[];
+  options?: string[];
   correctAnswer: string;
   exam: string;
   points: number;
@@ -180,8 +185,8 @@ export const APISlice = createApi({
         body,
       }),
       // حدّث كاش الدرس المعدّل + قايمة الدروس
-      invalidatesTags: (result, error, arg) =>
-        result
+      invalidatesTags: (_result, _error, arg) =>
+        _result
           ? [
               { type: "Lessons", id: arg.id },
               { type: "Lessons", id: "LIST" },
@@ -198,7 +203,7 @@ export const APISlice = createApi({
         url: `/lesson/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, id) => [
+      invalidatesTags: (_result, _error, id) => [
         { type: "Lessons", id },
         { type: "Lessons", id: "LIST" },
       ],
@@ -218,14 +223,14 @@ export const APISlice = createApi({
           : [{ type: "Exam" as const, id: "LIST" }],
     }),
 
-    addExam: builder.mutation<Exam, Exam>({
+    addExam: builder.mutation<Exam, NewExam>({
       query: (body) => ({
         url: "/exam",
         method: "POST",
         body,
       }),
       invalidatesTags: ["Exam"],
-      async onQueryStarted({ queryFulfilled }) {
+      async onQueryStarted(_arg, { queryFulfilled }) {
         try {
           await queryFulfilled;
           toast.success(`Exam added successfully`);
@@ -235,14 +240,14 @@ export const APISlice = createApi({
       },
     }),
 
-    updateExam: builder.mutation<void, { id: string; body: Exam }>({
+    updateExam: builder.mutation<void, { id: string; body: UpdateExamBody }>({
       query: ({ id, body }) => ({
         url: `/exam/${id}`,
         method: "PUT",
         body,
       }),
       invalidatesTags: ["Exam"],
-      async onQueryStarted(id, { queryFulfilled }) {
+      async onQueryStarted(_id, { queryFulfilled }) {
         try {
           await queryFulfilled;
           toast.success(`Exam updated successfully`);
@@ -258,7 +263,7 @@ export const APISlice = createApi({
         method: "DELETE",
       }),
       invalidatesTags: ["Exam"],
-      async onQueryStarted(id, { queryFulfilled }) {
+      async onQueryStarted(_id, { queryFulfilled }) {
         try {
           await queryFulfilled;
           toast.success(`Exam deleted successfully`);
@@ -270,7 +275,7 @@ export const APISlice = createApi({
 
     //-----------------------------------------------------------------------------------------------
 
-    addQuestion: builder.mutation<void, Question>({
+    addQuestion: builder.mutation<void, NewQuestion>({
       query: (body) => ({
         url: `/question`,
         method: "POST",
@@ -279,14 +284,14 @@ export const APISlice = createApi({
       invalidatesTags: ["questions"],
     }),
 
-    updateQuestion: builder.mutation<void, { id: string; body: Question }>({
+    updateQuestion: builder.mutation<void, { id: string; body: UpdateQuestionBody }>({
       query: ({ id, body }) => ({
         url: `/question/${id}`,
         method: "PUT",
         body,
       }),
       invalidatesTags: ["questions"],
-      async onQueryStarted(id, { queryFulfilled }) {
+      async onQueryStarted(_id, { queryFulfilled }) {
         try {
           await queryFulfilled;
           toast.success(`questions updated successfully`);
@@ -315,7 +320,7 @@ export const APISlice = createApi({
         method: "DELETE",
       }),
       invalidatesTags: ["questions"],
-      async onQueryStarted(id, { queryFulfilled }) {
+      async onQueryStarted(_id, { queryFulfilled }) {
         try {
           await queryFulfilled;
           toast.success(`Question deleted successfully`);
@@ -346,3 +351,6 @@ export const {
   useDeleteQuestionMutation,
   useUpdateQuestionMutation,
 } = APISlice;
+
+export type NewQuestion = Omit<Question, "_id">;
+export type UpdateQuestionBody = Partial<NewQuestion>;
