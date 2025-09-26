@@ -8,7 +8,6 @@ import {
   MdHome,
   MdPlayLesson,
   MdQuiz,
-  MdSchool,
 } from "react-icons/md";
 import { NavLink } from "react-router-dom";
 
@@ -23,7 +22,6 @@ const navigation = [
   { name: "Lesson", href: "/lesson", icon: MdPlayLesson },
   { name: "Question", href: "/question", icon: MdQuiz },
   { name: "Exam", href: "/exam", icon: MdAssignment },
-  { name: "Student Exam", href: "/student-exam", icon: MdSchool },
   { name: "Admin", href: "/admin", icon: MdAdminPanelSettings },
   { name: "User", href: "/user", icon: FaUser },
 ];

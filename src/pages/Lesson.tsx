@@ -11,6 +11,7 @@ import {
   useUpdateLessonMutation,
   type Lesson,
 } from "../app/features/APISlice";
+
 type LessonFormValues = {
   title: string;
   description: string;
@@ -27,7 +28,6 @@ export default function LessonPage() {
     isError,
     refetch,
   } = useGetAllLessonQuery(undefined, {
-    // لتقليل الاهتزازات وإعادة الجلب المفاجئة
     refetchOnFocus: false,
     refetchOnReconnect: false,
   });
@@ -71,7 +71,9 @@ export default function LessonPage() {
         description: selectedLesson.description ?? "",
         video: selectedLesson.video ?? "",
         classLevel: selectedLesson.classLevel ?? "",
-        scheduledDate: (selectedLesson.scheduledDate || "").slice(0, 10),
+        scheduledDate: (selectedLesson as any)?.scheduledDate
+          ? String((selectedLesson as any).scheduledDate).slice(0, 10)
+          : new Date().toISOString().slice(0, 10),
         price: Number(selectedLesson.price ?? 0),
       });
     } else {
@@ -82,15 +84,17 @@ export default function LessonPage() {
   const onSubmit = async (data: LessonFormValues) => {
     try {
       if (mode === "edit" && selectedLesson?._id) {
-        await updateLesson({ id: selectedLesson._id, ...data }).unwrap();
+        // مهم: في التحديث بنشيل scheduledDate عشان ما يتبعتش ولا يتعدل
+        const { scheduledDate, ...updateData } = data;
+        await updateLesson({ id: selectedLesson._id, ...updateData }).unwrap();
       } else {
+        // في الإضافة بنبعت scheduledDate عادي
         await addLesson(data).unwrap();
       }
       reset(emptyDefaults);
       setIsOpen(false);
       setSelectedLesson(null);
       setMode("create");
-      // عادةً الـ invalidatesTags هيكفي، إنما refetch كتأمين إضافي
       refetch();
     } catch (e) {
       console.error(e);
@@ -171,34 +175,22 @@ export default function LessonPage() {
 
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Lesson ID
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Video
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Title
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Description
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Class Level
                 </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Action
                 </th>
               </tr>
@@ -262,7 +254,6 @@ export default function LessonPage() {
                 ))
               )}
 
-              {/* مؤشر تحديث بسيط أثناء isFetching من غير ما نمسح الصفوف */}
               {isFetching && safeLessons.length > 0 && (
                 <tr>
                   <td colSpan={6} className="px-6 py-3">
@@ -353,15 +344,16 @@ export default function LessonPage() {
 
                 {/* Class Level */}
                 <div>
-                  <label className="block mb-1 text-gray-900 dark:text-white">
-                    Class Level
-                  </label>
-                  <input
+                  <label className="block mb-1 text-white">Class Level</label>
+                  <select
                     {...register("classLevel", {
-                      required: "Class Level is required",
+                      required: "Class level is required",
                     })}
-                    className="border rounded p-2 w-full bg-white/90 text-gray-900"
-                  />
+                    className="border rounded p-2 w-full bg-white/90 text-gray-900">
+                    <option value="Grade 1 Secondary">Grade 1 Secondary</option>
+                    <option value="Grade 2 Secondary">Grade 2 Secondary</option>
+                    <option value="Grade 3 Secondary">Grade 3 Secondary</option>
+                  </select>
                   {errors.classLevel && (
                     <p className="text-red-400 text-sm mt-1">
                       {errors.classLevel.message}
@@ -369,7 +361,7 @@ export default function LessonPage() {
                   )}
                 </div>
 
-                {/* Date */}
+                {/* Scheduled Date */}
                 <div>
                   <label className="block mb-1 text-gray-900 dark:text-white">
                     Scheduled Date
@@ -432,9 +424,12 @@ export default function LessonPage() {
                               description: selectedLesson.description ?? "",
                               video: selectedLesson.video ?? "",
                               classLevel: selectedLesson.classLevel ?? "",
-                              scheduledDate: (
-                                selectedLesson.scheduledDate || ""
-                              ).slice(0, 10),
+                              scheduledDate: (selectedLesson as any)
+                                ?.scheduledDate
+                                ? String(
+                                    (selectedLesson as any).scheduledDate
+                                  ).slice(0, 10)
+                                : new Date().toISOString().slice(0, 10),
                               price: Number(selectedLesson.price ?? 0),
                             }
                           : emptyDefaults
