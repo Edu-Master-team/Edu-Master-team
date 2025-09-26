@@ -1,5 +1,6 @@
 // src/features/api/api.ts
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import toast from "react-hot-toast";
 
 export interface LoginBody {
   email?: string;
@@ -40,6 +41,31 @@ export interface IAddLesson {
   price: number;
 }
 
+//---------------------------------------------------------
+
+export interface Exam {
+  _id: string;
+  title: string;
+  description: string;
+  classLevel: string;
+  duration: number;
+  startDate: string;
+  endDate: string;
+  isPublished: boolean;
+}
+//---------------------------------------------------------
+interface Question {
+  _id: string;
+  text: string;
+  type: string;
+  options: string[];
+  correctAnswer: string;
+  exam: string;
+  points: number;
+}
+
+//---------------------------------------------------------------
+
 export interface Admin {
   _id: string;
   fullName: string;
@@ -63,7 +89,7 @@ const normalizeArray = <T>(res: any): T[] => {
 export const APISlice = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://edu-master-delta.vercel.app",
+    baseUrl: "https://edu-master-psi.vercel.app",
     prepareHeaders: (headers, { getState }) => {
       const token =
         (getState() as any)?.auth?.token || localStorage.getItem("token");
@@ -76,7 +102,7 @@ export const APISlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Admins", "Users", "Lessons"],
+  tagTypes: ["Admins", "Users", "Lessons", "Exam", "questions"],
   endpoints: (builder) => ({
     login: builder.mutation<LoginResp, LoginBody>({
       query: (body) => ({
@@ -144,6 +170,127 @@ export const APISlice = createApi({
             ]
           : [{ type: "Lessons" as const, id: "LIST" }],
     }),
+
+    //----------------------------------------------------------------------------------------------------------------
+    getAllExam: builder.query<Exam[], void>({
+      query: () => ({ url: "/exam", method: "GET" }),
+      transformResponse: (resp: ApiEnvelope<Exam[]> | Exam[]) =>
+        normalizeArray<Exam>(resp),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((l) => ({ type: "Exam" as const, id: l._id })),
+              { type: "Exam" as const, id: "LIST" },
+            ]
+          : [{ type: "Exam" as const, id: "LIST" }],
+    }),
+
+    addExam: builder.mutation<Exam, Exam>({
+      query: (body) => ({
+        url: "/exam",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Exam"],
+      async onQueryStarted({ queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success(`Exam added successfully`);
+        } catch (error) {
+          toast.error("Failed to add the new exam");
+        }
+      },
+    }),
+
+    updateExam: builder.mutation<void, { id: string; body: Exam }>({
+      query: ({ id, body }) => ({
+        url: `/exam/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Exam"],
+      async onQueryStarted(id, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success(`Exam updated successfully`);
+        } catch (error) {
+          toast.error("Failed to update exam");
+        }
+      },
+    }),
+
+    deleteExam: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/exam/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Exam"],
+      async onQueryStarted(id, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success(`Exam deleted successfully`);
+        } catch (error) {
+          toast.error("Failed to delete exam");
+        }
+      },
+    }),
+
+    //-----------------------------------------------------------------------------------------------
+
+    addQuestion: builder.mutation<void, Question>({
+      query: (body) => ({
+        url: `/question`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["questions"],
+    }),
+
+    updateQuestion: builder.mutation<void, { id: string; body: Question }>({
+      query: ({ id, body }) => ({
+        url: `/question/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["questions"],
+      async onQueryStarted(id, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success(`questions updated successfully`);
+        } catch (error) {
+          toast.error("Failed to update questions");
+        }
+      },
+    }),
+
+    getAllQuestion: builder.query<Question[], void>({
+      query: () => ({ url: "/question", method: "GET" }),
+      transformResponse: (resp: ApiEnvelope<Question[]> | Question[]) =>
+        normalizeArray<Question>(resp),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((l) => ({ type: "questions" as const, id: l._id })),
+              { type: "questions" as const, id: "LIST" },
+            ]
+          : [{ type: "questions" as const, id: "LIST" }],
+    }),
+
+    deleteQuestion: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/question/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["questions"],
+      async onQueryStarted(id, { queryFulfilled }) {
+        try {
+          await queryFulfilled;
+          toast.success(`Question deleted successfully`);
+        } catch (error) {
+          toast.error("Failed to delete question");
+        }
+      },
+    }),
   }),
 });
 
@@ -154,4 +301,12 @@ export const {
   useGetAllUsersQuery,
   useAddLessonMutation,
   useGetAllLessonQuery,
+  useGetAllExamQuery,
+  useAddExamMutation,
+  useDeleteExamMutation,
+  useUpdateExamMutation,
+  useAddQuestionMutation,
+  useGetAllQuestionQuery,
+  useDeleteQuestionMutation,
+  useUpdateQuestionMutation,
 } = APISlice;

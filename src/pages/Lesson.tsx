@@ -70,7 +70,8 @@ export default function LessonPage() {
             </div>
             <button
               onClick={() => setIsOpen(true)}
-              className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500">
+              className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
+            >
               Add Lesson
             </button>
           </div>
@@ -102,7 +103,8 @@ export default function LessonPage() {
               {safeLessons.map((lesson) => (
                 <tr
                   key={lesson._id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
                   <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                     {lesson._id}
                   </td>
@@ -137,13 +139,15 @@ export default function LessonPage() {
         open={isOpen}
         onClose={() => setIsOpen(false)}
         as="div"
-        className="relative z-10">
-        <div className="fixed mt-6 inset-0 z-10 w-screen overflow-y-auto">
+        className="relative z-10"
+      >
+        <div className="fixed mt-6 inset-0 z-10 w-screen overflow-y-auto bg-black/60">
           <div className="flex min-h-full items-center justify-center p-4">
             <DialogPanel className="w-full max-w-md rounded-xl bg-white/5 p-6 backdrop-blur-2xl ring-1 ring-white/10">
               <form
                 onSubmit={handleSubmit(onSubmit)}
-                className="space-y-4 mt-3">
+                className="space-y-4 mt-3"
+              >
                 {/* Title */}
                 <div>
                   <label className="block mb-1 text-gray-900 dark:text-white">
@@ -257,19 +261,22 @@ export default function LessonPage() {
                   <button
                     disabled={isLoading}
                     type="submit"
-                    className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500">
+                    className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-500"
+                  >
                     Submit
                   </button>
                   <button
                     type="button"
                     onClick={() => reset()}
-                    className="inline-flex items-center rounded-md bg-gray-700 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600">
+                    className="inline-flex items-center rounded-md bg-gray-700 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-600"
+                  >
                     Reset
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsOpen(false)}
-                    className="ml-auto inline-flex items-center rounded-md bg-zinc-700 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-600">
+                    className="ml-auto inline-flex items-center rounded-md bg-zinc-700 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-600"
+                  >
                     Close
                   </button>
                 </div>

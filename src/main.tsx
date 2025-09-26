@@ -5,12 +5,14 @@ import App from "./App.tsx";
 import LoginOnce from "./app/auth/login.ts";
 import { store } from "./app/store.ts";
 import "./index.css";
+import { Toaster } from "react-hot-toast";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
       <LoginOnce />
       <App />
+      <Toaster />
     </Provider>
   </StrictMode>
 );
